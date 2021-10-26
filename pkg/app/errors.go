@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 type ErrTodo struct {
@@ -24,3 +26,10 @@ func (e errNotFound) Error() string {
 func ErrNotFound(msg string) errNotFound {
 	return errNotFound{msg}
 }
+
+var (
+	ErrTitleLong    = errors.New("title is too long")
+	ErrDetailLong   = errors.New("details longer than 1000 characters")
+	ErrTodoNotFound = errors.New("todo not found")
+	ErrTodoNotSaved = errors.New("unable to create todo")
+)

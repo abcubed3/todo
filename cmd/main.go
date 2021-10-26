@@ -6,7 +6,7 @@ import (
 
 	"todoApp/pkg/app"
 	db "todoApp/pkg/db/firestore"
-	h "todoApp/pkg/http"
+	"todoApp/pkg/http"
 
 	"cloud.google.com/go/firestore"
 )
@@ -22,6 +22,6 @@ func main() {
 	firestoredb := db.NewFirestoreRepository(dbClient)
 	todoService := app.NewTodoService(firestoredb)
 
-	srv := h.NewServer(&todoService, "8000")
+	srv := http.NewServer(&todoService, "8000")
 	srv.Run()
 }

@@ -102,6 +102,40 @@ func (fr FirestoreRepository) UpdateTodo(ctx context.Context, id string, updatef
 	}
 	return t, nil
 }
+
+func (fr FirestoreRepository) DeleteTodo(ctx context.Context, id string, deletefn func(context.Context, *app.Todo)) error {
+	doc, err := fr.todosCollection().Doc(id).Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return app.ErrNotFound(id)
+		}
+		if err != nil {
+			return errors.Wrap(err, "unable to get actual docs")
+		}
+	}
+
+	// get doc to TodoModel
+	tm := TodoModel{}
+	err = doc.DataTo(&tm)
+	if err != nil {
+		return errors.Wrap(err, "unable to load db document")
+	}
+
+	// map tm to app.Todo
+	t, err := fr.unmarshallTodo(&tm)
+	if err != nil {
+		return err
+	}
+	// make struct empty
+	deletefn(ctx, t)
+	// Alternative approach - Instead of delete, mark deletedAt field with a data
+
+	// delete in db
+	if _, err = fr.todosCollection().Doc(id).Delete(ctx); err != nil {
+		return errors.Wrap(err, "unable to delete db")
+	}
+	return nil
+}
 func (fr FirestoreRepository) unmarshallTodo(tm *TodoModel) (*app.Todo, error) {
 	if tm == nil {
 		return nil, errors.New("empty todo")

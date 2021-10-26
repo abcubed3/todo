@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,11 +41,18 @@ func (s Server) get(w http.ResponseWriter, r *http.Request) {
 
 	todo, err := s.GetTodo(ctx, id)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
+		if errors.Is(err, app.ErrTodoNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
 	}
 
 	data := marshalTodo(todo)
 	writeTodoJSON(w, data)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s Server) create(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +72,9 @@ func (s Server) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := marshalTodo(t)
+	w.WriteHeader(http.StatusCreated)
 	writeTodoJSON(w, data)
+
 }
 
 func (s Server) updateDetail(w http.ResponseWriter, r *http.Request) {
@@ -82,8 +92,8 @@ func (s Server) updateDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	
-	payload, err := s.UpdateDetail(ctx, id, todo.Detail)
+
+	payload, err := s.UpdateTodo(ctx, id, todo.Title, todo.Detail, todo.Done)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -91,4 +101,27 @@ func (s Server) updateDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	data := marshalTodo(payload)
 	writeTodoJSON(w, data)
+}
+
+func (s Server) delete(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	id := vars["id"]
+	if id == "" {
+		fmt.Fprint(w, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	err := s.DeleteTodo(ctx, id)
+	if err != nil {
+		// log.Println(err)
+		if errors.Is(err, app.ErrTodoNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

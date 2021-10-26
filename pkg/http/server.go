@@ -43,5 +43,6 @@ func (srv *Server) Run() {
 func (srv *Server) registerRoutes() {
 	srv.r.HandleFunc("/{id:[0-9a-zA-Z]+}", srv.get).Methods("GET")
 	srv.r.HandleFunc("/{id:[0-9a-zA-Z]+}", srv.updateDetail).Methods("PUT")
+	srv.r.HandleFunc("/{id:[0-9a-zA-Z]+}", srv.delete).Methods("DELETE")
 	srv.r.HandleFunc("/", srv.create).Methods("POST")
 }

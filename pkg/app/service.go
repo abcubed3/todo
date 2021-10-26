@@ -20,7 +20,7 @@ type DB interface {
 	// GetTodos(ctx context.Context, ids ...string) (Todos, error)
 	CreateTodo(ctx context.Context, todo *Todo) error
 	UpdateTodo(ctx context.Context, id string, updatefn func(ctx context.Context, todo *Todo) error) (*Todo, error)
-	// DeleteTodo(ctx context.Context, id string, deleteType func(context.Context, *Todo) error) error
+	DeleteTodo(ctx context.Context, id string, deletefn func(context.Context, *Todo)) error
 }
 
 // Create and define business and application logic here
@@ -29,7 +29,7 @@ func (ts TodoService) GetTodo(ctx context.Context, id string) (*Todo, error) {
 	todo, err := ts.DB.GetTodo(ctx, id)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.Wrap(err, "unable to get todo")
+		return nil, ErrTodoNotFound
 	}
 	return todo, nil
 }
@@ -41,14 +41,14 @@ func (ts TodoService) GetTodo(ctx context.Context, id string) (*Todo, error) {
 func (ts TodoService) CreateTodo(ctx context.Context, todo *Todo) error {
 	if err := ts.DB.CreateTodo(ctx, todo); err != nil {
 		log.Println(err)
-		return errors.Wrap(err, "unable to update details")
+		return ErrTodoNotSaved
 	}
 	return nil
 }
 
-func (ts TodoService) UpdateDetail(ctx context.Context, id, detail string) (*Todo, error) {
+func (ts TodoService) UpdateTodo(ctx context.Context, id, title, detail string, done bool) (*Todo, error) {
 	todo, err := ts.DB.UpdateTodo(ctx, id, func(ctx context.Context, todo *Todo) error {
-		return todo.UpdateDetail(detail)
+		return todo.Update(title, detail, done)
 	})
 	if err != nil {
 		log.Println(err)
@@ -57,6 +57,8 @@ func (ts TodoService) UpdateDetail(ctx context.Context, id, detail string) (*Tod
 	return todo, nil
 }
 
-// func (ts TodoService) DeleteTodo(ctx context.Context, id string, todo *Todo, deleteType func(context.Context, *Todo) error) error {
-// 	return ts.DB.DeleteTodo(ctx, id, todo,deleteType)
-// }
+func (ts TodoService) DeleteTodo(ctx context.Context, id string) error {
+	return ts.DB.DeleteTodo(ctx, id, func(ctx context.Context, todo *Todo) {
+		todo.Delete()
+	})
+}

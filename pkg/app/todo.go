@@ -1,9 +1,5 @@
 package app
 
-import (
-	"github.com/pkg/errors"
-)
-
 type Todo struct {
 	ID     string
 	Title  string
@@ -33,12 +29,16 @@ func (t *Todo) Done() bool {
 	return t.done
 }
 
-func (t *Todo) isDone() bool {
-	return !t.done
-}
+// func (t *Todo) isDone() bool {
+// 	return !t.done
+// }
 
 func (t *Todo) String() string {
 	return t.Title
+}
+
+func (t *Todo) Delete() {
+	t = nil
 }
 
 func (t Todo) Detail() string {
@@ -50,7 +50,7 @@ func (t Todo) Detail() string {
 
 func (t *Todo) UpdateDetail(detail string) error {
 	if len(detail) >= 1000 {
-		return errors.New("details longer than 1000 characters")
+		return ErrDetailLong
 	}
 	t.detail = detail
 	return nil
@@ -58,7 +58,10 @@ func (t *Todo) UpdateDetail(detail string) error {
 
 func (t *Todo) Update(title, detail string, done bool) error {
 	if len(detail) >= 1000 {
-		return errors.New("details longer than 1000 characters")
+		return ErrDetailLong
+	}
+	if len(title) >= 140 {
+		return ErrTitleLong
 	}
 	t.Title = title
 	t.done = done
@@ -73,6 +76,6 @@ func UnmarshalTodo(id, title, detail string, done bool) (t *Todo, err error) {
 		return nil, err
 	}
 	t.ID = id
-	t.isDone()
+	t.done = done
 	return
 }
